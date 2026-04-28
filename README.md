@@ -4,7 +4,7 @@ Este projeto implementa a **Etapa 1** do enunciado: uma interface web para **upl
 
 ## Como rodar
 
-### Backend (Python / FastAPI)
+### Backend (Python)
 
 ```bash
 cd api
@@ -16,7 +16,7 @@ notepad .env
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend (React / Vite)
+### Frontend (React / JS)
 
 Em outro terminal:
 
