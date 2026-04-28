@@ -1,4 +1,4 @@
-# API (Python / FastAPI)
+# API (Python)
 
 ## Requisitos
 
