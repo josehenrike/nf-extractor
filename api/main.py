@@ -2,84 +2,25 @@ import json
 import os
 from io import BytesIO
 from typing import Any, Dict, List, Optional
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
-from dotenv import load_dotenv
 from pypdf import PdfReader
-
 
 load_dotenv(override=True)
 
+import models  # noqa: E402
+from database import engine, get_db  # noqa: E402
+from routers import fornecedores, clientes, faturados, tipos_despesa, tipos_receita, contas_pagar, contas_receber  # noqa: E402
 
-class Fornecedor(BaseModel):
-    razao_social: str = Field(..., description="Razão social do fornecedor")
-    fantasia: Optional[str] = Field(None, description="Nome fantasia do fornecedor")
-    cnpj: str = Field(..., description="CNPJ do fornecedor")
+# cria tabelas automaticamente se não existirem
+models.Base.metadata.create_all(bind=engine)
 
-
-class Faturado(BaseModel):
-    nome_completo: str = Field(..., description="Nome completo do faturado")
-    cpf: str = Field(..., description="CPF do faturado")
-
-
-class Parcela(BaseModel):
-    data_vencimento: str = Field(..., description="Data de vencimento (YYYY-MM-DD, se possível)")
-    valor: Optional[float] = Field(None, description="Valor da parcela (se disponível)")
-
-
-class ExtracaoNf(BaseModel):
-    fornecedor: Fornecedor
-    faturado: Faturado
-    numero_nota_fiscal: str
-    data_emissao: str
-    descricao_produtos: str
-    quantidade_parcelas: int = Field(..., ge=1)
-    parcelas: List[Parcela]
-    valor_total: float
-    classificacoes_despesa: List[str] = Field(
-        ..., description="Uma ou mais categorias de despesa interpretadas a partir dos itens"
-    )
-
-
-def _env(name: str, default: Optional[str] = None) -> str:
-    value = os.getenv(name, default)
-    if value is None or value.strip() == "":
-        raise RuntimeError(f"Variável de ambiente ausente: {name}")
-    return value
-
-
-def _parse_json_response(text: str) -> Dict[str, Any]:
-    t = text.strip()
-    if t.startswith("```"):
-        t = t.strip("`")
-        lines = t.splitlines()
-        if lines and lines[0].lower().startswith("json"):
-            lines = lines[1:]
-        t = "\n".join(lines).strip()
-    try:
-        return json.loads(t)
-    except Exception:
-        start = t.find("{")
-        end = t.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            return json.loads(t[start : end + 1])
-        raise
-
-
-def _pdf_to_text(pdf_bytes: bytes) -> str:
-    reader = PdfReader(BytesIO(pdf_bytes))
-    parts: List[str] = []
-    for page in reader.pages:
-        parts.append(page.extract_text() or "")
-    text = "\n".join(parts)
-    text = "\n".join(line.rstrip() for line in text.splitlines()).strip()
-    return text
-
-
-app = FastAPI(title="NF Extractor - Etapa 1")
+app = FastAPI(title="NF Extractor - Sistema Administrativo-Financeiro")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
@@ -90,87 +31,133 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ─── Routers CRUD ─────────────────────────────────────────────────────────────
+app.include_router(fornecedores.router)
+app.include_router(clientes.router)
+app.include_router(faturados.router)
+app.include_router(tipos_despesa.router)
+app.include_router(tipos_receita.router)
+app.include_router(contas_pagar.router)
+app.include_router(contas_receber.router)
 
-@app.get("/health")
+
+# ─── Health ───────────────────────────────────────────────────────────────────
+
+@app.get("/health", tags=["Sistema"])
 def health():
     load_dotenv(override=True)
-    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    return {"ok": True, "model": model}
+    return {"ok": True, "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash")}
 
 
-@app.post("/extract", response_model=ExtracaoNf)
+# ─── Extração de NF (Etapa 1) ─────────────────────────────────────────────────
+
+class _Fornecedor(BaseModel):
+    razao_social: str = Field(..., description="Razão social")
+    fantasia: Optional[str] = Field(None)
+    cnpj: str
+
+class _Faturado(BaseModel):
+    nome_completo: str
+    cpf: str
+
+class _Parcela(BaseModel):
+    data_vencimento: str
+    valor: Optional[float] = None
+
+class ExtracaoNf(BaseModel):
+    fornecedor: _Fornecedor
+    faturado: _Faturado
+    numero_nota_fiscal: str
+    data_emissao: str
+    descricao_produtos: str
+    quantidade_parcelas: int = Field(..., ge=1)
+    parcelas: List[_Parcela]
+    valor_total: float
+    classificacoes_despesa: List[str]
+
+
+def _env(name: str, default: Optional[str] = None) -> str:
+    value = os.getenv(name, default)
+    if not value or not value.strip():
+        raise RuntimeError(f"Variável de ambiente ausente: {name}")
+    return value
+
+
+def _parse_json(text: str) -> Dict[str, Any]:
+    t = text.strip()
+    if t.startswith("```"):
+        t = t.strip("`")
+        lines = t.splitlines()
+        if lines and lines[0].lower().startswith("json"):
+            lines = lines[1:]
+        t = "\n".join(lines).strip()
+    try:
+        return json.loads(t)
+    except Exception:
+        start, end = t.find("{"), t.rfind("}")
+        if start != -1 and end > start:
+            return json.loads(t[start:end + 1])
+        raise
+
+
+def _pdf_to_text(pdf_bytes: bytes) -> str:
+    reader = PdfReader(BytesIO(pdf_bytes))
+    parts = [page.extract_text() or "" for page in reader.pages]
+    return "\n".join(line.rstrip() for line in "\n".join(parts).splitlines()).strip()
+
+
+@app.post("/extract", response_model=ExtracaoNf, tags=["Extração NF"])
 async def extract(file: UploadFile = File(...)):
     load_dotenv(override=True)
     if file.content_type not in ("application/pdf", "application/octet-stream"):
-        raise HTTPException(status_code=400, detail="Envie um arquivo PDF.")
+        raise HTTPException(400, "Envie um arquivo PDF.")
 
     try:
         api_key = _env("GEMINI_API_KEY")
-        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        model   = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(500, str(e))
 
     pdf_bytes = await file.read()
     if not pdf_bytes:
-        raise HTTPException(status_code=400, detail="Arquivo vazio.")
-
-    client = genai.Client(api_key=api_key)
+        raise HTTPException(400, "Arquivo vazio.")
 
     nf_text = _pdf_to_text(pdf_bytes)
     if not nf_text:
-        raise HTTPException(
-            status_code=400,
-            detail="Não consegui extrair texto do PDF (parece ser imagem/scaneado). Use um PDF com texto ou aplique OCR antes.",
-        )
+        raise HTTPException(400, "Não foi possível extrair texto do PDF (imagem/scaneado).")
 
-    prompt = f"""
+    prompt = """
 Você é um extrator de dados de NOTA FISCAL para CONTAS A PAGAR.
-
-Você receberá o TEXTO da nota fiscal. Responda com JSON VÁLIDO (sem markdown, sem texto extra) com esta estrutura:
-
-{{
-  "fornecedor": {{"razao_social": "...", "fantasia": "...", "cnpj": "..."}},
-  "faturado": {{"nome_completo": "...", "cpf": "..."}},
+Responda com JSON VÁLIDO (sem markdown) com esta estrutura:
+{
+  "fornecedor": {"razao_social": "...", "fantasia": "...", "cnpj": "..."},
+  "faturado": {"nome_completo": "...", "cpf": "..."},
   "numero_nota_fiscal": "...",
-  "data_emissao": "...",
+  "data_emissao": "YYYY-MM-DD",
   "descricao_produtos": "...",
   "quantidade_parcelas": 1,
-  "parcelas": [{{"data_vencimento": "...", "valor": null}}],
+  "parcelas": [{"data_vencimento": "YYYY-MM-DD", "valor": 0.0}],
   "valor_total": 0.0,
   "classificacoes_despesa": ["..."]
-}}
-
+}
 Regras:
-- Se algum campo não estiver claramente no PDF, preencha com string vazia ("") ou null quando fizer sentido, mas mantenha a estrutura.
-- datas: prefira YYYY-MM-DD (se não conseguir, mantenha como aparece no documento).
-- valor_total e valor (parcela) devem ser números (use ponto como separador decimal).
-- quantidade_parcelas: por enquanto use 1, mas mantenha lista parcelas com 1 item.
-- classificacoes_despesa: deve ser uma lista com 1 ou mais categorias principais (ex.: "MANUTENÇÃO E OPERAÇÃO", "INFRAESTRUTURA E UTILIDADES", "INSUMOS AGRÍCOLAS", "RECURSOS HUMANOS", "SERVIÇOS OPERACIONAIS", "ADMINISTRATIVAS", "SEGUROS E PROTEÇÃO", "IMPOSTOS E TAXAS", "INVESTIMENTOS").
-- A classificação de despesa NÃO é um campo extraído literalmente; deve ser inferida pela descrição dos produtos/serviços.
+- Campos ausentes: string vazia ou null.
+- Datas em YYYY-MM-DD.
+- Valores numéricos com ponto decimal.
+- classificacoes_despesa inferida pelos produtos/serviços. Categorias: INSUMOS AGRÍCOLAS, MANUTENÇÃO E OPERAÇÃO, RECURSOS HUMANOS, SERVIÇOS OPERACIONAIS, INFRAESTRUTURA E UTILIDADES, ADMINISTRATIVAS, SEGUROS E PROTEÇÃO, IMPOSTOS E TAXAS, INVESTIMENTOS.
 """.strip()
 
     try:
-        contents = [prompt, f"TEXTO DA NOTA FISCAL:\n{nf_text}"]
-        resp = client.models.generate_content(
+        resp = genai.Client(api_key=api_key).models.generate_content(
             model=model,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                response_mime_type="application/json",
-            ),
+            contents=[prompt, f"TEXTO DA NOTA FISCAL:\n{nf_text}"],
+            config=types.GenerateContentConfig(temperature=0.2, response_mime_type="application/json"),
         )
-
         text = (resp.text or "").strip()
         if not text:
-            raise HTTPException(status_code=502, detail="Modelo não retornou conteúdo.")
-
-        data = _parse_json_response(text)
-        return ExtracaoNf.model_validate(data)
+            raise HTTPException(502, "Modelo não retornou conteúdo.")
+        return ExtracaoNf.model_validate(_parse_json(text))
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Falha ao extrair dados via Gemini: {type(e).__name__}: {e}",
-        )
-
+        raise HTTPException(502, f"Falha ao extrair via Gemini: {type(e).__name__}: {e}")
