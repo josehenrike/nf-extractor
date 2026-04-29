@@ -1,20 +1,20 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Fornecedores }     from "../pages/Fornecedores";
-import { Clientes }         from "../pages/Clientes";
-import { Faturados }        from "../pages/Faturados";
-import { TiposDespesa }     from "../pages/TiposDespesa";
-import { TiposReceita }     from "../pages/TiposReceita";
-import { ContasPagarPage }  from "../pages/ContasPagar";
-import { ContasReceberPage }from "../pages/ContasReceber";
+import { Fornecedores } from "../pages/Fornecedores";
+import { Clientes } from "../pages/Clientes";
+import { Faturados } from "../pages/Faturados";
+import { TiposDespesa } from "../pages/TiposDespesa";
+import { TiposReceita } from "../pages/TiposReceita";
+import { ContasPagarPage } from "../pages/ContasPagar";
+import { ContasReceberPage } from "../pages/ContasReceber";
 
 // ─── Página de Extração NF ────────────────────────────────────────────────────
 function ExtracaoNF() {
-  const [file, setFile]       = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [isDragging, setDrag] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-  const [result, setResult]   = useState<unknown>(null);
-  const [copied, setCopied]   = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<unknown>(null);
+  const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileLabel = useMemo(() => file ? `${file.name} · ${Math.round(file.size / 1024)} KB` : null, [file]);
@@ -106,9 +106,9 @@ const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
   {
     group: "Cadastros",
     items: [
-      { id: "fornecedores",  label: "Fornecedores" },
-      { id: "clientes",      label: "Clientes" },
-      { id: "faturados",     label: "Faturados" },
+      { id: "fornecedores", label: "Fornecedores" },
+      { id: "clientes", label: "Clientes" },
+      { id: "faturados", label: "Faturados" },
       { id: "tipos-despesa", label: "Tipos de Despesa" },
       { id: "tipos-receita", label: "Tipos de Receita" },
     ],
@@ -116,7 +116,7 @@ const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
   {
     group: "Financeiro",
     items: [
-      { id: "contas-pagar",   label: "Contas a Pagar" },
+      { id: "contas-pagar", label: "Contas a Pagar" },
       { id: "contas-receber", label: "Contas a Receber" },
     ],
   },
@@ -150,13 +150,13 @@ export function App() {
         </nav>
       </aside>
       <main className="content">
-        {page === "extracao"       && <ExtracaoNF />}
-        {page === "fornecedores"   && <Fornecedores />}
-        {page === "clientes"       && <Clientes />}
-        {page === "faturados"      && <Faturados />}
-        {page === "tipos-despesa"  && <TiposDespesa />}
-        {page === "tipos-receita"  && <TiposReceita />}
-        {page === "contas-pagar"   && <ContasPagarPage />}
+        {page === "extracao" && <ExtracaoNF />}
+        {page === "fornecedores" && <Fornecedores />}
+        {page === "clientes" && <Clientes />}
+        {page === "faturados" && <Faturados />}
+        {page === "tipos-despesa" && <TiposDespesa />}
+        {page === "tipos-receita" && <TiposReceita />}
+        {page === "contas-pagar" && <ContasPagarPage />}
         {page === "contas-receber" && <ContasReceberPage />}
       </main>
     </div>
