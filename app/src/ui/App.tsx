@@ -233,9 +233,9 @@ const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
   {
     group: "Cadastros",
     items: [
-      { id: "fornecedores",  label: "Fornecedores" },
-      { id: "clientes",      label: "Clientes" },
-      { id: "faturados",     label: "Faturados" },
+      { id: "fornecedores", label: "Fornecedores" },
+      { id: "clientes", label: "Clientes" },
+      { id: "faturados", label: "Faturados" },
       { id: "tipos-despesa", label: "Tipos de Despesa" },
       { id: "tipos-receita", label: "Tipos de Receita" },
     ],
@@ -243,7 +243,7 @@ const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
   {
     group: "Financeiro",
     items: [
-      { id: "contas-pagar",   label: "Contas a Pagar" },
+      { id: "contas-pagar", label: "Contas a Pagar" },
       { id: "contas-receber", label: "Contas a Receber" },
     ],
   },
@@ -277,13 +277,13 @@ export function App() {
         </nav>
       </aside>
       <main className="content">
-        {page === "extracao"       && <ExtracaoNF />}
-        {page === "fornecedores"   && <Fornecedores />}
-        {page === "clientes"       && <Clientes />}
-        {page === "faturados"      && <Faturados />}
-        {page === "tipos-despesa"  && <TiposDespesa />}
-        {page === "tipos-receita"  && <TiposReceita />}
-        {page === "contas-pagar"   && <ContasPagarPage />}
+        {page === "extracao" && <ExtracaoNF />}
+        {page === "fornecedores" && <Fornecedores />}
+        {page === "clientes" && <Clientes />}
+        {page === "faturados" && <Faturados />}
+        {page === "tipos-despesa" && <TiposDespesa />}
+        {page === "tipos-receita" && <TiposReceita />}
+        {page === "contas-pagar" && <ContasPagarPage />}
         {page === "contas-receber" && <ContasReceberPage />}
       </main>
     </div>
