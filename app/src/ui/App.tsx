@@ -6,15 +6,82 @@ import { TiposDespesa }     from "../pages/TiposDespesa";
 import { TiposReceita }     from "../pages/TiposReceita";
 import { ContasPagarPage }  from "../pages/ContasPagar";
 import { ContasReceberPage }from "../pages/ContasReceber";
+import { api, AnaliseResult, LancarNfInput } from "../api/client";
 
-// ─── Página de Extração NF ────────────────────────────────────────────────────
+// Painel de Análise 
+function AnalisePanel({ analise, onLancar, launching, launchError }: {
+  analise: AnaliseResult;
+  onLancar: () => void;
+  launching: boolean;
+  launchError: string | null;
+}) {
+  return (
+    <div className="analisePanel">
+      <div className="analisePanelTitle">Análise dos Dados</div>
+
+      <div className="analiseEntidade">
+        <div className="analiseEntidadeLabel">FORNECEDOR</div>
+        <div className="analiseEntidadeNome">{analise.fornecedor.razao_social}</div>
+        <div className="analiseEntidadeDoc">CNPJ: {analise.fornecedor.cnpj}</div>
+        {analise.fornecedor.existe
+          ? <div className="analiseStatus analiseExiste">EXISTE – ID: {analise.fornecedor.id}</div>
+          : <div className="analiseStatus analiseNaoExiste">NÃO EXISTE</div>
+        }
+      </div>
+
+      <div className="analiseEntidade">
+        <div className="analiseEntidadeLabel">FATURADO</div>
+        <div className="analiseEntidadeNome">{analise.faturado.nome_completo}</div>
+        <div className="analiseEntidadeDoc">CPF: {analise.faturado.cpf}</div>
+        {analise.faturado.existe
+          ? <div className="analiseStatus analiseExiste">EXISTE – ID: {analise.faturado.id}</div>
+          : <div className="analiseStatus analiseNaoExiste">NÃO EXISTE</div>
+        }
+      </div>
+
+      {analise.classificacoes.map((c, i) => (
+        <div key={i} className="analiseEntidade">
+          <div className="analiseEntidadeLabel">DESPESA</div>
+          <div className="analiseEntidadeNome">{c.nome}</div>
+          {c.existe
+            ? <div className="analiseStatus analiseExiste">EXISTE – ID: {c.id}</div>
+            : <div className="analiseStatus analiseNaoExiste">NÃO EXISTE</div>
+          }
+        </div>
+      ))}
+
+      <div className="analiseInfo">
+        {[analise.fornecedor, analise.faturado, ...analise.classificacoes].some(e => !e.existe) && (
+          <span>Registros inexistentes serão criados automaticamente.</span>
+        )}
+      </div>
+
+      {launchError && <div className="alertBox">{launchError}</div>}
+
+      <button className="extractBtn" onClick={onLancar} disabled={launching}>
+        {launching ? "Lançando..." : "✔ Confirmar e Lançar"}
+      </button>
+    </div>
+  );
+}
+
+// Página de Extração NF
 function ExtracaoNF() {
-  const [file, setFile]       = useState<File | null>(null);
-  const [isDragging, setDrag] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-  const [result, setResult]   = useState<unknown>(null);
-  const [copied, setCopied]   = useState(false);
+  const [file, setFile]           = useState<File | null>(null);
+  const [isDragging, setDrag]     = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [result, setResult]       = useState<LancarNfInput | null>(null);
+  const [copied, setCopied]       = useState(false);
+
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analise, setAnalise]     = useState<AnaliseResult | null>(null);
+  const [analiseErr, setAnaliseErr] = useState<string | null>(null);
+
+  const [launching, setLaunching] = useState(false);
+  const [launchErr, setLaunchErr] = useState<string | null>(null);
+  const [success, setSuccess]     = useState<number | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fileLabel = useMemo(() => file ? `${file.name} · ${Math.round(file.size / 1024)} KB` : null, [file]);
@@ -22,21 +89,47 @@ function ExtracaoNF() {
   function handleFile(f?: File | null) {
     if (!f) return;
     if (f.type !== "application/pdf") { setError("Apenas arquivos PDF."); return; }
-    setFile(f); setError(null); setResult(null);
+    setFile(f); setError(null); setResult(null); setAnalise(null); setSuccess(null);
+  }
+
+  function reset() {
+    setFile(null); setResult(null); setError(null); setAnalise(null);
+    setAnaliseErr(null); setLaunchErr(null); setSuccess(null);
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   async function extract() {
     if (!file) { setError("Selecione um PDF."); return; }
-    setError(null); setResult(null); setLoading(true);
+    setError(null); setResult(null); setAnalise(null); setSuccess(null); setLoading(true);
     try {
       const form = new FormData(); form.append("file", file);
       const res = await fetch("http://localhost:8001/extract", { method: "POST", body: form });
       const ct = res.headers.get("content-type") ?? "";
       const body = ct.includes("application/json") ? await res.json() : await res.text();
       if (!res.ok) throw new Error(body?.detail ?? body);
-      setResult(body);
+      setResult(body as LancarNfInput);
     } catch (e) { setError(e instanceof Error ? e.message : "Erro."); }
     finally { setLoading(false); }
+  }
+
+  async function analisar() {
+    if (!result) return;
+    setAnaliseErr(null); setAnalise(null); setSuccess(null); setLaunchErr(null); setAnalyzing(true);
+    try {
+      const res = await api.nf.analisar(result);
+      setAnalise(res);
+    } catch (e) { setAnaliseErr(e instanceof Error ? e.message : "Erro na análise."); }
+    finally { setAnalyzing(false); }
+  }
+
+  async function lancar() {
+    if (!result) return;
+    setLaunchErr(null); setLaunching(true);
+    try {
+      const res = await api.nf.lancar(result);
+      setSuccess(res.conta_pagar_id);
+    } catch (e) { setLaunchErr(e instanceof Error ? e.message : "Erro ao lançar."); }
+    finally { setLaunching(false); }
   }
 
   function copy() {
@@ -46,6 +139,7 @@ function ExtracaoNF() {
 
   return (
     <div className="extractPage">
+      {/* Coluna esquerda: upload */}
       <div className="extractLeft">
         <div className="panelTitle">Nota Fiscal</div>
         <div
@@ -72,7 +166,7 @@ function ExtracaoNF() {
         {fileLabel && (
           <div className="fileRow">
             <span className="filePill">{fileLabel}</span>
-            <button className="iconBtn" onClick={() => { setFile(null); setResult(null); setError(null); if (inputRef.current) inputRef.current.value = ""; }}>✕</button>
+            <button className="iconBtn" onClick={reset}>✕</button>
           </div>
         )}
         {error && <div className="alertBox">{error}</div>}
@@ -80,21 +174,54 @@ function ExtracaoNF() {
           {loading ? "Extraindo..." : "✦ Extrair dados"}
         </button>
       </div>
-      <div className="extractRight">
-        <div className="resultHeader">
-          <div className="panelTitle">Resultado JSON</div>
-          {result && <button className="iconBtn iconBtnText" onClick={copy}>{copied ? "✓ Copiado" : "Copiar"}</button>}
+
+      {/* Coluna direita: JSON + Análise empilhados verticalmente */}
+      <div className="extractRightCol">
+        <div className="extractRight">
+          <div className="resultHeader">
+            <div className="panelTitle">Dados Extraídos</div>
+            {result && <button className="iconBtn iconBtnText" onClick={copy}>{copied ? "✓ Copiado" : "Copiar"}</button>}
+          </div>
+
+          {success !== null ? (
+            <div className="successBox">
+              <div className="successIcon">✔</div>
+              <div className="successTitle">Lançado com Sucesso!</div>
+              <div className="successSub">Conta a Pagar criada com ID <strong>#{success}</strong></div>
+              <button className="btnSecondary" style={{ marginTop: 12 }} onClick={reset}>Nova Extração</button>
+            </div>
+          ) : result ? (
+            <>
+              <pre className="json">{JSON.stringify(result, null, 2)}</pre>
+              {!analise && (
+                <>
+                  {analiseErr && <div className="alertBox">{analiseErr}</div>}
+                  <button className="extractBtn analiseBtn" onClick={analisar} disabled={analyzing}>
+                    {analyzing ? "Analisando..." : "⟳ Analisar e Lançar"}
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <div className="emptyState"><div className="emptyIcon">✦</div><span>O JSON extraído aparecerá aqui</span></div>
+          )}
         </div>
-        {result
-          ? <pre className="json">{JSON.stringify(result, null, 2)}</pre>
-          : <div className="emptyState"><div className="emptyIcon">✦</div><span>O JSON extraído aparecerá aqui</span></div>
-        }
+
+        {/* Painel de análise abaixo do JSON */}
+        {analise && success === null && (
+          <AnalisePanel
+            analise={analise}
+            onLancar={lancar}
+            launching={launching}
+            launchError={launchErr}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Navegação ────────────────────────────────────────────────────────────────
+// Navegação 
 
 type Page = "extracao" | "fornecedores" | "clientes" | "faturados" | "tipos-despesa" | "tipos-receita" | "contas-pagar" | "contas-receber";
 

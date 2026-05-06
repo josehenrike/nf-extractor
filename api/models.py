@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 
-# ─── Cadastros ────────────────────────────────────────────────────────────────
+# Cadastros
 
 class Fornecedor(Base):
     __tablename__ = "fornecedores"
@@ -58,7 +58,7 @@ class TipoReceita(Base):
     classificacoes = relationship("ClassificacaoReceber", back_populates="tipo_receita")
 
 
-# ─── Contas a Pagar ────────────────────────────────────────────────────────────
+# Contas a Pagar
 
 class ContasPagar(Base):
     __tablename__  = "contas_pagar"
@@ -99,7 +99,7 @@ class ClassificacaoPagar(Base):
     tipo_despesa = relationship("TipoDespesa",  back_populates="classificacoes")
 
 
-# ─── Contas a Receber ──────────────────────────────────────────────────────────
+# Contas a Receber
 
 class ContasReceber(Base):
     __tablename__ = "contas_receber"

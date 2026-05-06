@@ -39,7 +39,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ─── Page ─────────────────────────────────────────────── */
+/* Page */
 
 .page {
   max-width: 1080px;
@@ -47,7 +47,7 @@ body {
   padding: 0 0 48px;
 }
 
-/* ─── Top bar ───────────────────────────────────────────── */
+/* Top bar */
 
 .header {
   background: var(--surface);
@@ -95,7 +95,7 @@ h1 {
   border-left: 1px solid var(--border);
 }
 
-/* ─── Layout ─────────────────────────────────────────────── */
+/* Layout */
 
 .layout {
   display: grid;
@@ -110,7 +110,7 @@ h1 {
   .header { padding: 0 16px; }
 }
 
-/* ─── Panel ─────────────────────────────────────────────── */
+/* Panel */
 
 .panel {
   background: var(--surface);
@@ -131,7 +131,7 @@ h1 {
   color: var(--muted);
 }
 
-/* ─── Dropzone ───────────────────────────────────────────── */
+/* Dropzone */
 
 .dropzone {
   border: 2px dashed var(--border);
@@ -188,7 +188,7 @@ h1 {
   color: var(--muted-2);
 }
 
-/* ─── File info inside dropzone ─────────────────────────── */
+/* File info inside dropzone */
 
 .fileInfo {
   display: flex;
@@ -230,7 +230,7 @@ h1 {
   color: var(--muted);
 }
 
-/* ─── File row ───────────────────────────────────────────── */
+/* File row */
 
 .fileRow {
   display: flex;
@@ -251,7 +251,7 @@ h1 {
   text-overflow: ellipsis;
 }
 
-/* ─── Buttons ───────────────────────────────────────────── */
+/* Buttons */
 
 .extractBtn {
   width: 100%;
@@ -313,14 +313,14 @@ h1 {
   padding: 5px 10px;
 }
 
-/* ─── Divider ────────────────────────────────────────────── */
+/* Divider */
 
 .divider {
   height: 1px;
   background: var(--border);
 }
 
-/* ─── Alert ─────────────────────────────────────────────── */
+/* Alert */
 
 .alert {
   border: 1px solid var(--danger-border);
@@ -332,7 +332,7 @@ h1 {
   color: var(--danger);
 }
 
-/* ─── Result panel ───────────────────────────────────────── */
+/* Result panel */
 
 .resultPanel {
   min-height: 480px;
@@ -345,7 +345,7 @@ h1 {
   gap: 10px;
 }
 
-/* ─── Empty state ────────────────────────────────────────── */
+/* Empty state */
 
 .emptyState {
   flex: 1;
@@ -373,7 +373,7 @@ h1 {
   margin-bottom: 4px;
 }
 
-/* ─── JSON block ─────────────────────────────────────────── */
+/* JSON block */
 
 .json {
   background: #fafafa;
@@ -389,7 +389,7 @@ h1 {
   white-space: pre;
 }
 
-/* ─── Shell / Sidebar ────────────────────────────────────── */
+/* Shell / Sidebar */
 
 .shell {
   display: flex;
@@ -474,7 +474,7 @@ h1 {
   padding: 28px;
 }
 
-/* ─── CRUD Page ───────────────────────────────────────────── */
+/* CRUD Page */
 
 .crudPage { display: flex; flex-direction: column; gap: 16px; }
 
@@ -562,7 +562,7 @@ h1 {
 .statusBadge.ativo   { background: #dcfce7; color: #16a34a; }
 .statusBadge.inativo { background: #f1f5f9; color: #94a3b8; }
 
-/* ─── Botões ──────────────────────────────────────────────── */
+/* Botões */
 
 .btnPrimary {
   background: var(--accent);
@@ -610,7 +610,7 @@ h1 {
 .btnSm.btnSuccess { color: var(--success); border-color: #bbf7d0; }
 .btnSm.btnSuccess:hover { background: var(--success-bg); }
 
-/* ─── Modal ───────────────────────────────────────────────── */
+/* Modal */
 
 .modalOverlay {
   position: fixed; inset: 0;
@@ -655,7 +655,7 @@ h1 {
   padding-top: 8px;
 }
 
-/* ─── Formulários ─────────────────────────────────────────── */
+/* Formulários */
 
 .formGroup { display: flex; flex-direction: column; gap: 5px; }
 .formGroup label { font-size: 12px; font-weight: 500; color: var(--muted); }
@@ -705,7 +705,7 @@ h1 {
 }
 .parcelaNum { font-size: 12px; font-weight: 600; color: var(--muted); padding-bottom: 6px; }
 
-/* ─── Alert ───────────────────────────────────────────────── */
+/* Alert */
 
 .alertBox {
   border: 1px solid var(--danger-border);
@@ -716,7 +716,7 @@ h1 {
   color: var(--danger);
 }
 
-/* ─── Extração ────────────────────────────────────────────── */
+/* Extração */
 
 .extractPage {
   display: grid;
@@ -759,7 +759,134 @@ h1 {
   margin-bottom: 4px;
 }
 
-/* ─── Spinner ────────────────────────────────────────────── */
+/* Coluna direita: JSON + análise empilhados */
+
+.extractRightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.analiseBtn {
+  margin-top: 4px;
+  background: #059669;
+  border-color: #059669;
+}
+.analiseBtn:not(:disabled):hover { background: #047857; border-color: #047857; }
+
+/* Painel de Análise */
+
+.analisePanel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.analisePanelTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--muted);
+}
+
+.analiseEntidade {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.analiseEntidadeLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted-2);
+  margin-bottom: 2px;
+}
+
+.analiseEntidadeNome {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.analiseEntidadeDoc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.analiseStatus {
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: 0.2px;
+}
+
+.analiseExiste    { color: #2563eb; }
+.analiseNaoExiste { color: #dc2626; }
+
+.analiseInfo {
+  font-size: 12px;
+  color: var(--muted);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  line-height: 1.5;
+  min-height: 0;
+}
+.analiseInfo:empty { display: none; }
+
+/* Caixa de Sucesso */
+
+.successBox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.successIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #dcfce7;
+  border: 2px solid #86efac;
+  color: #16a34a;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.successTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.successSub {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* Spinner */
 
 .spinner {
   display: inline-block;

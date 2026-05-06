@@ -15,7 +15,7 @@ load_dotenv(override=True)
 
 import models  # noqa: E402
 from database import engine, get_db  # noqa: E402
-from routers import fornecedores, clientes, faturados, tipos_despesa, tipos_receita, contas_pagar, contas_receber  # noqa: E402
+from routers import fornecedores, clientes, faturados, tipos_despesa, tipos_receita, contas_pagar, contas_receber, nf_lancar  # noqa: E402
 
 # cria tabelas automaticamente se não existirem
 models.Base.metadata.create_all(bind=engine)
@@ -31,7 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Routers CRUD ─────────────────────────────────────────────────────────────
+# Routers CRUD 
 app.include_router(fornecedores.router)
 app.include_router(clientes.router)
 app.include_router(faturados.router)
@@ -39,9 +39,10 @@ app.include_router(tipos_despesa.router)
 app.include_router(tipos_receita.router)
 app.include_router(contas_pagar.router)
 app.include_router(contas_receber.router)
+app.include_router(nf_lancar.router)
 
 
-# ─── Health ───────────────────────────────────────────────────────────────────
+# Health 
 
 @app.get("/health", tags=["Sistema"])
 def health():
@@ -49,7 +50,7 @@ def health():
     return {"ok": True, "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash")}
 
 
-# ─── Extração de NF (Etapa 1) ─────────────────────────────────────────────────
+# Extração de NF (Etapa 1) 
 
 class _Fornecedor(BaseModel):
     razao_social: str = Field(..., description="Razão social")

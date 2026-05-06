@@ -11,19 +11,19 @@ async function req<T>(path: string, options?: RequestInit): Promise<T> {
   return body as T;
 }
 
-const get  = <T>(path: string) => req<T>(path);
+const get = <T>(path: string) => req<T>(path);
 const post = <T>(path: string, data: unknown) => req<T>(path, { method: "POST", body: JSON.stringify(data) });
-const put  = <T>(path: string, data: unknown) => req<T>(path, { method: "PUT",  body: JSON.stringify(data) });
+const put = <T>(path: string, data: unknown) => req<T>(path, { method: "PUT", body: JSON.stringify(data) });
 const patch = <T>(path: string) => req<T>(path, { method: "PATCH" });
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
-export interface Fornecedor  { id: number; razao_social: string; fantasia: string | null; cnpj: string; ativo: boolean }
-export interface Cliente     { id: number; nome: string; cpf_cnpj: string; email: string | null; telefone: string | null; ativo: boolean }
-export interface Faturado    { id: number; nome_completo: string; cpf: string; ativo: boolean }
+export interface Fornecedor { id: number; razao_social: string; fantasia: string | null; cnpj: string; ativo: boolean }
+export interface Cliente { id: number; nome: string; cpf_cnpj: string; email: string | null; telefone: string | null; ativo: boolean }
+export interface Faturado { id: number; nome_completo: string; cpf: string; ativo: boolean }
 export interface TipoDespesa { id: number; nome: string; descricao: string | null; ativo: boolean }
 export interface TipoReceita { id: number; nome: string; descricao: string | null; ativo: boolean }
 
-export interface Parcela     { numero: number; data_vencimento: string; valor: number; pago?: boolean; recebido?: boolean }
+export interface Parcela { numero: number; data_vencimento: string; valor: number; pago?: boolean; recebido?: boolean }
 export interface ContasPagar {
   id: number; numero_nf: string | null; data_emissao: string; descricao: string | null;
   valor_total: number; fornecedor_id: number; faturado_id: number | null;
@@ -35,54 +35,88 @@ export interface ContasReceber {
   parcelas: (Parcela & { id: number })[]; tipo_receita_ids: number[];
 }
 
-// ─── API calls ────────────────────────────────────────────────────────────────
+// Tipos para Etapa 2 
+
+export interface LancarNfInput {
+  fornecedor: { razao_social: string; fantasia?: string | null; cnpj: string };
+  faturado: { nome_completo: string; cpf: string };
+  numero_nota_fiscal: string;
+  data_emissao: string;
+  descricao_produtos: string;
+  quantidade_parcelas: number;
+  parcelas: { data_vencimento: string; valor?: number | null }[];
+  valor_total: number;
+  classificacoes_despesa: string[];
+}
+
+export interface EntidadeInfo {
+  existe: boolean;
+  id: number | null;
+}
+export interface FornecedorInfo extends EntidadeInfo { razao_social: string; cnpj: string }
+export interface FaturadoInfo extends EntidadeInfo { nome_completo: string; cpf: string }
+export interface ClassificacaoInfo extends EntidadeInfo { nome: string }
+
+export interface AnaliseResult {
+  fornecedor: FornecedorInfo;
+  faturado: FaturadoInfo;
+  classificacoes: ClassificacaoInfo[];
+}
+
+export interface LancarResult { ok: boolean; conta_pagar_id: number }
+
+// API calls 
 export const api = {
   fornecedores: {
-    listar:   (ativo?: boolean) => get<Fornecedor[]>(`/fornecedores${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: Omit<Fornecedor, "id" | "ativo">) => post<Fornecedor>("/fornecedores", d),
-    atualizar:(id: number, d: Partial<Fornecedor>)  => put<Fornecedor>(`/fornecedores/${id}`, d),
+    listar: (ativo?: boolean) => get<Fornecedor[]>(`/fornecedores${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: Omit<Fornecedor, "id" | "ativo">) => post<Fornecedor>("/fornecedores", d),
+    atualizar: (id: number, d: Partial<Fornecedor>) => put<Fornecedor>(`/fornecedores/${id}`, d),
     inativar: (id: number) => patch<Fornecedor>(`/fornecedores/${id}/inativar`),
     reativar: (id: number) => patch<Fornecedor>(`/fornecedores/${id}/reativar`),
   },
   clientes: {
-    listar:   (ativo?: boolean) => get<Cliente[]>(`/clientes${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: Omit<Cliente, "id" | "ativo">) => post<Cliente>("/clientes", d),
-    atualizar:(id: number, d: Partial<Cliente>)  => put<Cliente>(`/clientes/${id}`, d),
+    listar: (ativo?: boolean) => get<Cliente[]>(`/clientes${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: Omit<Cliente, "id" | "ativo">) => post<Cliente>("/clientes", d),
+    atualizar: (id: number, d: Partial<Cliente>) => put<Cliente>(`/clientes/${id}`, d),
     inativar: (id: number) => patch<Cliente>(`/clientes/${id}/inativar`),
     reativar: (id: number) => patch<Cliente>(`/clientes/${id}/reativar`),
   },
   faturados: {
-    listar:   (ativo?: boolean) => get<Faturado[]>(`/faturados${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: Omit<Faturado, "id" | "ativo">) => post<Faturado>("/faturados", d),
-    atualizar:(id: number, d: Partial<Faturado>)  => put<Faturado>(`/faturados/${id}`, d),
+    listar: (ativo?: boolean) => get<Faturado[]>(`/faturados${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: Omit<Faturado, "id" | "ativo">) => post<Faturado>("/faturados", d),
+    atualizar: (id: number, d: Partial<Faturado>) => put<Faturado>(`/faturados/${id}`, d),
     inativar: (id: number) => patch<Faturado>(`/faturados/${id}/inativar`),
     reativar: (id: number) => patch<Faturado>(`/faturados/${id}/reativar`),
   },
   tiposDespesa: {
-    listar:   (ativo?: boolean) => get<TipoDespesa[]>(`/tipos-despesa${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: Omit<TipoDespesa, "id" | "ativo">) => post<TipoDespesa>("/tipos-despesa", d),
-    atualizar:(id: number, d: Partial<TipoDespesa>)  => put<TipoDespesa>(`/tipos-despesa/${id}`, d),
+    listar: (ativo?: boolean) => get<TipoDespesa[]>(`/tipos-despesa${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: Omit<TipoDespesa, "id" | "ativo">) => post<TipoDespesa>("/tipos-despesa", d),
+    atualizar: (id: number, d: Partial<TipoDespesa>) => put<TipoDespesa>(`/tipos-despesa/${id}`, d),
     inativar: (id: number) => patch<TipoDespesa>(`/tipos-despesa/${id}/inativar`),
     reativar: (id: number) => patch<TipoDespesa>(`/tipos-despesa/${id}/reativar`),
   },
   tiposReceita: {
-    listar:   (ativo?: boolean) => get<TipoReceita[]>(`/tipos-receita${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: Omit<TipoReceita, "id" | "ativo">) => post<TipoReceita>("/tipos-receita", d),
-    atualizar:(id: number, d: Partial<TipoReceita>)  => put<TipoReceita>(`/tipos-receita/${id}`, d),
+    listar: (ativo?: boolean) => get<TipoReceita[]>(`/tipos-receita${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: Omit<TipoReceita, "id" | "ativo">) => post<TipoReceita>("/tipos-receita", d),
+    atualizar: (id: number, d: Partial<TipoReceita>) => put<TipoReceita>(`/tipos-receita/${id}`, d),
     inativar: (id: number) => patch<TipoReceita>(`/tipos-receita/${id}/inativar`),
     reativar: (id: number) => patch<TipoReceita>(`/tipos-receita/${id}/reativar`),
   },
   contasPagar: {
-    listar:   (ativo?: boolean) => get<ContasPagar[]>(`/contas-pagar${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: unknown) => post<ContasPagar>("/contas-pagar", d),
-    atualizar:(id: number, d: unknown) => put<ContasPagar>(`/contas-pagar/${id}`, d),
+    listar: (ativo?: boolean) => get<ContasPagar[]>(`/contas-pagar${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: unknown) => post<ContasPagar>("/contas-pagar", d),
+    atualizar: (id: number, d: unknown) => put<ContasPagar>(`/contas-pagar/${id}`, d),
     inativar: (id: number) => patch<ContasPagar>(`/contas-pagar/${id}/inativar`),
     reativar: (id: number) => patch<ContasPagar>(`/contas-pagar/${id}/reativar`),
   },
+  nf: {
+    analisar: (d: LancarNfInput) => post<AnaliseResult>("/nf/analisar", d),
+    lancar: (d: LancarNfInput) => post<LancarResult>("/nf/lancar", d),
+  },
   contasReceber: {
-    listar:   (ativo?: boolean) => get<ContasReceber[]>(`/contas-receber${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
-    criar:    (d: unknown) => post<ContasReceber>("/contas-receber", d),
-    atualizar:(id: number, d: unknown) => put<ContasReceber>(`/contas-receber/${id}`, d),
+    listar: (ativo?: boolean) => get<ContasReceber[]>(`/contas-receber${ativo !== undefined ? `?ativo=${ativo}` : ""}`),
+    criar: (d: unknown) => post<ContasReceber>("/contas-receber", d),
+    atualizar: (id: number, d: unknown) => put<ContasReceber>(`/contas-receber/${id}`, d),
     inativar: (id: number) => patch<ContasReceber>(`/contas-receber/${id}/inativar`),
     reativar: (id: number) => patch<ContasReceber>(`/contas-receber/${id}/reativar`),
   },

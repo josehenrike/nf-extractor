@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-# ─── Fornecedor ───────────────────────────────────────────────────────────────
+# Fornecedor
 
 class FornecedorCreate(BaseModel):
     razao_social: str
@@ -24,7 +24,7 @@ class FornecedorOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Cliente ──────────────────────────────────────────────────────────────────
+# Cliente
 
 class ClienteCreate(BaseModel):
     nome: str
@@ -48,7 +48,7 @@ class ClienteOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Faturado ─────────────────────────────────────────────────────────────────
+# Faturado
 
 class FaturadoCreate(BaseModel):
     nome_completo: str
@@ -66,7 +66,7 @@ class FaturadoOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Tipo de Despesa ──────────────────────────────────────────────────────────
+# Tipo de Despesa
 
 class TipoDespesaCreate(BaseModel):
     nome: str
@@ -84,7 +84,7 @@ class TipoDespesaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Tipo de Receita ──────────────────────────────────────────────────────────
+# Tipo de Receita
 
 class TipoReceitaCreate(BaseModel):
     nome: str
@@ -102,7 +102,7 @@ class TipoReceitaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Contas a Pagar ───────────────────────────────────────────────────────────
+# Contas a Pagar
 
 class ParcelaPagarIn(BaseModel):
     numero: int = 1
@@ -148,7 +148,7 @@ class ContasPagarOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Contas a Receber ─────────────────────────────────────────────────────────
+# Contas a Receber
 
 class ParcelaReceberIn(BaseModel):
     numero: int = 1
