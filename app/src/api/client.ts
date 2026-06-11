@@ -120,4 +120,14 @@ export const api = {
     inativar: (id: number) => patch<ContasReceber>(`/contas-receber/${id}/inativar`),
     reativar: (id: number) => patch<ContasReceber>(`/contas-receber/${id}/reativar`),
   },
+  rag: {
+    simples: (pergunta: string) => post<RagResponse>("/rag/simples", { pergunta }),
+    embeddings: (pergunta: string) => post<RagResponse>("/rag/embeddings", { pergunta }),
+  },
 };
+
+export interface RagResponse {
+  resposta: string;
+  modo: "simples" | "embeddings";
+  documentos_usados: number;
+}

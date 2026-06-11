@@ -15,7 +15,7 @@ load_dotenv(override=True)
 
 import models  # noqa: E402
 from database import engine, get_db  # noqa: E402
-from routers import fornecedores, clientes, faturados, tipos_despesa, tipos_receita, contas_pagar, contas_receber, nf_lancar  # noqa: E402
+from routers import fornecedores, clientes, faturados, tipos_despesa, tipos_receita, contas_pagar, contas_receber, nf_lancar, rag  # noqa: E402
 
 # cria tabelas automaticamente se não existirem
 models.Base.metadata.create_all(bind=engine)
@@ -40,6 +40,7 @@ app.include_router(tipos_receita.router)
 app.include_router(contas_pagar.router)
 app.include_router(contas_receber.router)
 app.include_router(nf_lancar.router)
+app.include_router(rag.router)
 
 
 # Health 

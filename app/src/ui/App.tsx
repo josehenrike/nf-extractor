@@ -6,6 +6,7 @@ import { TiposDespesa }     from "../pages/TiposDespesa";
 import { TiposReceita }     from "../pages/TiposReceita";
 import { ContasPagarPage }  from "../pages/ContasPagar";
 import { ContasReceberPage }from "../pages/ContasReceber";
+import { ConsultaRAG }      from "../pages/ConsultaRAG";
 import { api, AnaliseResult, LancarNfInput } from "../api/client";
 
 // Painel de Análise 
@@ -223,12 +224,15 @@ function ExtracaoNF() {
 
 // Navegação 
 
-type Page = "extracao" | "fornecedores" | "clientes" | "faturados" | "tipos-despesa" | "tipos-receita" | "contas-pagar" | "contas-receber";
+type Page = "extracao" | "consulta-rag" | "fornecedores" | "clientes" | "faturados" | "tipos-despesa" | "tipos-receita" | "contas-pagar" | "contas-receber";
 
 const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
   {
     group: "Extração",
-    items: [{ id: "extracao", label: "Extração de NF" }],
+    items: [
+      { id: "extracao",     label: "Extração de NF" },
+      { id: "consulta-rag", label: "Consulta RAG" },
+    ],
   },
   {
     group: "Cadastros",
@@ -277,13 +281,14 @@ export function App() {
         </nav>
       </aside>
       <main className="content">
-        {page === "extracao" && <ExtracaoNF />}
+        {page === "extracao"     && <ExtracaoNF />}
+        {page === "consulta-rag" && <ConsultaRAG />}
         {page === "fornecedores" && <Fornecedores />}
-        {page === "clientes" && <Clientes />}
-        {page === "faturados" && <Faturados />}
-        {page === "tipos-despesa" && <TiposDespesa />}
-        {page === "tipos-receita" && <TiposReceita />}
-        {page === "contas-pagar" && <ContasPagarPage />}
+        {page === "clientes"     && <Clientes />}
+        {page === "faturados"    && <Faturados />}
+        {page === "tipos-despesa"  && <TiposDespesa />}
+        {page === "tipos-receita"  && <TiposReceita />}
+        {page === "contas-pagar"   && <ContasPagarPage />}
         {page === "contas-receber" && <ContasReceberPage />}
       </main>
     </div>
