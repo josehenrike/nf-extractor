@@ -6,8 +6,6 @@ from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
@@ -150,6 +148,8 @@ Regras:
 """.strip()
 
     try:
+        from google import genai
+        from google.genai import types
         resp = genai.Client(api_key=api_key).models.generate_content(
             model=model,
             contents=[prompt, f"TEXTO DA NOTA FISCAL:\n{nf_text}"],

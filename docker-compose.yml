@@ -12,10 +12,24 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d nfextractor"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d nfextractor" ]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  ollama:
+    image: ollama/ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: [ "CMD", "ollama", "list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
 
   api:
     build:
@@ -26,11 +40,15 @@ services:
     env_file:
       - ./api/.env
     environment:
-      # Sobrescreve o DATABASE_URL do .env para apontar ao container db
       DATABASE_URL: postgresql://postgres:postgres@db:5432/nfextractor
       ALLOWED_ORIGINS: http://localhost:5173
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_LLM_MODEL: llama3.2
+      OLLAMA_EMBED_MODEL: nomic-embed-text
     depends_on:
       db:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
 
   app:
@@ -44,3 +62,4 @@ services:
 
 volumes:
   pgdata:
+  ollama_data:
