@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
@@ -107,16 +107,20 @@ def _pdf_to_text(pdf_bytes: bytes) -> str:
 
 
 @app.post("/extract", response_model=ExtracaoNf, tags=["Extração NF"])
-async def extract(file: UploadFile = File(...)):
+async def extract(file: UploadFile = File(...), x_groq_api_key: Optional[str] = Header(None)):
     load_dotenv(override=True)
     if file.content_type not in ("application/pdf", "application/octet-stream"):
         raise HTTPException(400, "Envie um arquivo PDF.")
 
-    try:
-        api_key = _env("GROQ_API_KEY")
-        model   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-    except RuntimeError as e:
-        raise HTTPException(500, str(e))
+    if not x_groq_api_key or not x_groq_api_key.strip():
+        try:
+            api_key = _env("GROQ_API_KEY")
+        except RuntimeError:
+            raise HTTPException(400, "Chave de API do Groq não fornecida. Faça login informando sua chave.")
+    else:
+        api_key = x_groq_api_key.strip()
+
+    model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
     pdf_bytes = await file.read()
     if not pdf_bytes:

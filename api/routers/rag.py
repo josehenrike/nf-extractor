@@ -10,7 +10,7 @@ from datetime import date
 from typing import Dict, List, Optional, Tuple
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session, joinedload
@@ -36,10 +36,13 @@ class RagResponse(BaseModel):
     tempo_ms: float = 0.0
     sql_query: Optional[str] = None
 
-def _cfg() -> dict:
+def _cfg(api_key: Optional[str] = None) -> dict:
     load_dotenv(override=False)
+    key = api_key.strip() if (api_key and api_key.strip()) else os.getenv("GROQ_API_KEY", "")
+    if not key or not key.strip():
+        raise HTTPException(400, "Chave de API do Groq não fornecida. Faça login informando sua chave.")
     return {
-        "groq_api_key": os.getenv("GROQ_API_KEY", ""),
+        "groq_api_key": key,
         "llm_model":    os.getenv("GROQ_MODEL", "llama-3.1-8b-instant"),
     }
 
@@ -100,8 +103,8 @@ Diretrizes:
 4. IMPORTANTE: Nunca mostre, mencione ou faça referência à consulta SQL executada, às tabelas/colunas consultadas ou a detalhes técnicos do banco de dados na sua resposta. Responda apenas de forma direta e clara sobre os dados financeiros reais retornados.
 """
 
-def _generate_sql(pergunta: str) -> str:
-    cfg = _cfg()
+def _generate_sql(pergunta: str, api_key: Optional[str] = None) -> str:
+    cfg = _cfg(api_key)
     client = Groq(api_key=cfg["groq_api_key"])
     current_date = date.today().isoformat()
     system_prompt = SQL_GENERATION_PROMPT.format(current_date=current_date)
@@ -236,8 +239,8 @@ Formato das Contas a Receber: CR[id]|[Número da Nota]|[Cliente]|[Valor Total]|[
 Sempre forneça os detalhes reais das contas nas respostas de forma amigável e legível, mencionando os nomes dos fornecedores, categorias, valores e o número exato da nota fiscal (NF) quando for listá-los.
 Seja exato nas respostas e use os dados fornecidos. Nunca mencione termos técnicos de banco de dados, queries SQL ou estrutura interna de tabelas."""
 
-def _call_llm(model_name: str, pergunta: str, resumo: str, docs_relevantes: List[str]) -> str:
-    cfg = _cfg()
+def _call_llm(model_name: str, pergunta: str, resumo: str, docs_relevantes: List[str], api_key: Optional[str] = None) -> str:
+    cfg = _cfg(api_key)
     client = Groq(api_key=cfg["groq_api_key"])
     docs_txt = "\n".join(docs_relevantes)
     user_msg = f"{resumo}\n\n=== DADOS RELEVANTES ===\n{docs_txt}\n\nPERGUNTA: {pergunta}"
@@ -256,13 +259,14 @@ def _call_llm(model_name: str, pergunta: str, resumo: str, docs_relevantes: List
         raise HTTPException(502, f"Erro ao chamar LLM (Groq): {e}")
 
 @router.post("/embeddings", response_model=RagResponse)
-def rag_embeddings(body: RagRequest, db: Session = Depends(get_db)):
+def rag_embeddings(body: RagRequest, db: Session = Depends(get_db), x_groq_api_key: Optional[str] = Header(None)):
     t0 = time.perf_counter()
     documentos = _build_documents(db, body.pergunta)
     if not documentos:
         raise HTTPException(404, "Nenhum dado.")
     
-    resposta = _call_llm(_cfg()["llm_model"], body.pergunta, _build_resumo(db), documentos)
+    cfg = _cfg(x_groq_api_key)
+    resposta = _call_llm(cfg["llm_model"], body.pergunta, _build_resumo(db), documentos, x_groq_api_key)
     
     return RagResponse(
         resposta=resposta,
@@ -273,12 +277,12 @@ def rag_embeddings(body: RagRequest, db: Session = Depends(get_db)):
     )
 
 @router.post("/simples", response_model=RagResponse)
-def rag_simples(body: RagRequest, db: Session = Depends(get_db)):
+def rag_simples(body: RagRequest, db: Session = Depends(get_db), x_groq_api_key: Optional[str] = Header(None)):
     t0 = time.perf_counter()
     pergunta = body.pergunta
     
     # 1. Gerar query SQL
-    sql = _generate_sql(pergunta)
+    sql = _generate_sql(pergunta, x_groq_api_key)
     
     # 2. Executar no banco
     rows, columns, error = _execute_sql(db, sql)
@@ -296,7 +300,7 @@ def rag_simples(body: RagRequest, db: Session = Depends(get_db)):
         )
         
     # 3. Formular resposta com LLM
-    cfg = _cfg()
+    cfg = _cfg(x_groq_api_key)
     client = Groq(api_key=cfg["groq_api_key"])
     
     try:

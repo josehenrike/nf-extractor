@@ -1,8 +1,13 @@
 const BASE = "http://localhost:8001";
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const key = sessionStorage.getItem("groq_api_key");
+  if (key) {
+    headers["X-Groq-Api-Key"] = key;
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { ...headers, ...options?.headers },
     ...options,
   });
   const ct = res.headers.get("content-type") ?? "";

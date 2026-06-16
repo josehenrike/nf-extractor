@@ -8,6 +8,7 @@ import { ContasPagarPage }  from "../pages/ContasPagar";
 import { ContasReceberPage }from "../pages/ContasReceber";
 import { ConsultaRAG }      from "../pages/ConsultaRAG";
 import { api, AnaliseResult, LancarNfInput } from "../api/client";
+import { Login }            from "./Login";
 
 // Painel de Análise 
 function AnalisePanel({ analise, onLancar, launching, launchError }: {
@@ -104,7 +105,18 @@ function ExtracaoNF() {
     setError(null); setResult(null); setAnalise(null); setSuccess(null); setLoading(true);
     try {
       const form = new FormData(); form.append("file", file);
-      const res = await fetch("http://localhost:8001/extract", { method: "POST", body: form });
+      
+      const headers: Record<string, string> = {};
+      const key = sessionStorage.getItem("groq_api_key");
+      if (key) {
+        headers["X-Groq-Api-Key"] = key;
+      }
+
+      const res = await fetch("http://localhost:8001/extract", { 
+        method: "POST", 
+        body: form,
+        headers
+      });
       const ct = res.headers.get("content-type") ?? "";
       const body = ct.includes("application/json") ? await res.json() : await res.text();
       if (!res.ok) throw new Error(body?.detail ?? body);
@@ -255,6 +267,25 @@ const NAV: { group: string; items: { id: Page; label: string }[] }[] = [
 
 export function App() {
   const [page, setPage] = useState<Page>("extracao");
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem("logged_in") === "true";
+  });
+
+  function handleLogin(apiKey: string) {
+    sessionStorage.setItem("logged_in", "true");
+    sessionStorage.setItem("groq_api_key", apiKey);
+    setIsAuthenticated(true);
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem("logged_in");
+    sessionStorage.removeItem("groq_api_key");
+    setIsAuthenticated(false);
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="shell">
@@ -279,6 +310,15 @@ export function App() {
             </div>
           ))}
         </nav>
+        <div className="sidebarUser">
+          <div className="sidebarUserInfo">
+            <span className="sidebarUserEmail">professor@teste.com</span>
+            <span className="sidebarUserRole">Professor</span>
+          </div>
+          <button className="btnLogout" onClick={handleLogout}>
+            <span>Sair</span>
+          </button>
+        </div>
       </aside>
       <main className="content">
         {page === "extracao"     && <ExtracaoNF />}
