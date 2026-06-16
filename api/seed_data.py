@@ -66,16 +66,15 @@ FATURADOS = [
 ]
 
 TIPOS_DESPESA = [
-    ("Serviços de TI",         "Gastos com softwares, licenças e suporte técnico"),
-    ("Material de Escritório", "Papéis, canetas, envelopes e afins"),
-    ("Energia Elétrica",       "Contas de luz das unidades"),
-    ("Aluguel",                "Aluguel de espaços físicos"),
-    ("Marketing",              "Campanhas publicitárias e materiais gráficos"),
-    ("Logística",              "Frete, transportes e entregas"),
-    ("Limpeza",                "Produtos e serviços de limpeza"),
-    ("Manutenção",             "Reparos e conservação predial"),
-    ("Telecomunicações",       "Planos de internet, telefone e links"),
-    ("Seguros",                "Prêmios de seguros corporativos"),
+    ("INSUMOS AGRÍCOLAS",          "Sementes, fertilizantes, defensivos agrícolas e corretivos"),
+    ("MANUTENÇÃO E OPERAÇÃO",      "Peças, combustíveis, ferramentas e manutenção de equipamentos"),
+    ("RECURSOS HUMANOS",           "Salários, encargos e contratação de mão de obra temporária"),
+    ("SERVIÇOS OPERACIONAIS",      "Colheita terceirizada, secagem, frete e pulverização"),
+    ("INFRAESTRUTURA E UTILIDADES", "Energia elétrica, arrendamento, construções e materiais"),
+    ("ADMINISTRATIVAS",            "Honorários advocatícios/contábeis e tarifas bancárias"),
+    ("SEGUROS E PROTEÇÃO",         "Seguro agrícola, seguro de ativos e seguro prestamista"),
+    ("IMPOSTOS E TAXAS",           "Impostos (ITR, IPVA, IPTU) e taxas e emolumentos do INCRA"),
+    ("INVESTIMENTOS",              "Aquisição de terras, veículos, máquinas e benfeitorias"),
 ]
 
 TIPOS_RECEITA = [
@@ -90,6 +89,57 @@ TIPOS_RECEITA = [
     ("Juros Recebidos",        "Rendimentos financeiros"),
     ("Serviços Educacionais",  "Cursos, treinamentos e workshops"),
 ]
+
+AGRICULTURAL_DESPESAS = {
+    "INSUMOS AGRÍCOLAS": [
+        "Compra de sementes (soja, milho, algodão) para o plantio",
+        "Aquisição de fertilizantes, adubo e corretivos de solo NPK",
+        "Defensivos agrícolas, pesticidas e herbicidas para controle de pragas",
+        "Corretivos de solo e calcário para preparo e calagem da terra"
+    ],
+    "MANUTENÇÃO E OPERAÇÃO": [
+        "Compra de combustíveis (óleo diesel) e lubrificantes para tratores",
+        "Aquisição de peças, parafusos e componentes mecânicos para tratores",
+        "Serviço de manutenção preventiva e corretiva de máquinas e colheitadeiras",
+        "Substituição de pneus, filtros e correias de máquinas agrícolas",
+        "Compra de ferramentas de oficina e utensílios gerais de manutenção"
+    ],
+    "RECURSOS HUMANOS": [
+        "Contratação de mão de obra temporária para colheita/safra",
+        "Pagamento de salários, encargos sociais e trabalhistas dos funcionários"
+    ],
+    "SERVIÇOS OPERACIONAIS": [
+        "Frete e transporte de grãos colhidos e insumos até a fazenda",
+        "Serviço de colheita terceirizada de grãos no período da safra",
+        "Serviço de secagem e armazenagem de grãos em cooperativa/silo",
+        "Pulverização aérea e aplicação terceirizada de defensivos agrícolas"
+    ],
+    "INFRAESTRUTURA E UTILIDADES": [
+        "Fatura de energia elétrica das instalações, poços artesianos e pivôs",
+        "Pagamento de arrendamento de terras agrícolas para cultivo",
+        "Serviços de construções e reformas nos galpões e alojamentos da fazenda",
+        "Compra de materiais de construção para cercas, porteiras e valas"
+    ],
+    "ADMINISTRATIVAS": [
+        "Pagamento de honorários contábeis, advocatícios e assessoria agronômica",
+        "Tarifas bancárias, juros de custeio e despesas financeiras administrativas"
+    ],
+    "SEGUROS E PROTEÇÃO": [
+        "Prêmio de seguro agrícola para proteção da lavoura contra intempéries",
+        "Seguro de ativos corporativos (máquinas, tratores, colheitadeiras e veículos)",
+        "Seguro prestamista associado a financiamento rural"
+    ],
+    "IMPOSTOS E TAXAS": [
+        "Guia de pagamento de impostos municipais/federais (ITR, IPTU, IPVA)",
+        "Taxas de regularização ambiental e emolumentos do INCRA-CCIR"
+    ],
+    "INVESTIMENTOS": [
+        "Compra de novas máquinas agrícolas, tratores e implementos modernos",
+        "Compra de veículos utilitários e caminhonetes para suporte na fazenda",
+        "Aquisição de novos imóveis rurais e expansão de terras cultiváveis",
+        "Investimento em melhorias de infraestrutura rural e barracões"
+    ]
+}
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,26 +179,6 @@ def make_parcelas_receber(conta_id: int, valor_total: float, n: int, base_date: 
     return parcelas
 
 
-# ─── Descrições variadas para as NFs ─────────────────────────────────────────
-
-DESCRICOES_PAGAR = [
-    "Fornecimento de material de escritório conforme pedido",
-    "Serviços de manutenção preventiva realizados",
-    "Contrato mensal de limpeza e higienização",
-    "Fatura de energia elétrica — competência {mes}/{ano}",
-    "Serviços de TI e suporte técnico mensal",
-    "Campanha de marketing digital — {mes}/{ano}",
-    "Aluguel do galpão logístico — {mes}/{ano}",
-    "Frete e transporte de mercadorias",
-    "Serviços de seguro patrimonial anual",
-    "Fornecimento de mobiliário para nova filial",
-    "Plano de telecomunicações corporativo — {mes}/{ano}",
-    "Serviços gráficos — impressão de material",
-    "Catering para evento corporativo",
-    "Fornecimento de água mineral — {mes}/{ano}",
-    "Licença anual de software ERP",
-]
-
 DESCRICOES_RECEBER = [
     "Venda de produtos conforme pedido {nf}",
     "Prestação de serviços de consultoria — projeto {nf}",
@@ -186,12 +216,26 @@ def seed():
     db = SessionLocal()
 
     try:
+        # ── Limpeza inicial ──────────────────────────────────────────────────
+        print("Limpando dados anteriores...")
+        db.query(ClassificacaoPagar).delete()
+        db.query(ClassificacaoReceber).delete()
+        db.query(ParcelaPagar).delete()
+        db.query(ParcelaReceber).delete()
+        db.query(ContasPagar).delete()
+        db.query(ContasReceber).delete()
+        db.query(Fornecedor).delete()
+        db.query(Cliente).delete()
+        db.query(Faturado).delete()
+        db.query(TipoDespesa).delete()
+        db.query(TipoReceita).delete()
+        db.commit()
+
         # ── 1. Cadastros auxiliares ──────────────────────────────────────────
 
         print("Inserindo fornecedores...")
         forn_objs = []
         for razao, fantasia, cnpj in FORNECEDORES:
-            # evita duplicata em re-execuções
             existing = db.query(Fornecedor).filter_by(cnpj=cnpj).first()
             if not existing:
                 f = Fornecedor(razao_social=razao, fantasia=fantasia, cnpj=cnpj)
@@ -258,13 +302,21 @@ def seed():
             num_parcelas = random.choice([1, 1, 1, 2, 3, 4, 6, 12])
             fornecedor   = random.choice(forn_objs)
             faturado     = random.choice(fat_objs) if random.random() > 0.3 else None
-            desc_tmpl    = DESCRICOES_PAGAR[i % len(DESCRICOES_PAGAR)]
             num_nf       = f"NF-{10000 + i:05d}"
+
+            # Seleciona o tipo de despesa primeiro para alinhar a descrição
+            tipo_despesa_escolhido = random.choice(td_objs)
+            desc_opcoes = AGRICULTURAL_DESPESAS.get(tipo_despesa_escolhido.nome, ["Despesa operacional geral da fazenda"])
+            desc_base = random.choice(desc_opcoes)
+            
+            mes = MESES[i % 12]
+            ano = 2024 + (i // 12) % 2
+            descricao_final = f"{desc_base} — Ref. {mes}/{ano}"
 
             cp = ContasPagar(
                 numero_nf    = num_nf,
                 data_emissao = emissao,
-                descricao    = fmt_desc(desc_tmpl, i),
+                descricao    = descricao_final,
                 valor_total  = valor,
                 fornecedor_id= fornecedor.id,
                 faturado_id  = faturado.id if faturado else None,
@@ -277,10 +329,13 @@ def seed():
             for p in make_parcelas_pagar(cp.id, valor, num_parcelas, emissao):
                 db.add(p)
 
-            # classificações (1 ou 2 tipos de despesa)
-            tipos_escolhidos = random.sample(td_objs, k=random.choice([1, 1, 2]))
-            for td in tipos_escolhidos:
-                db.add(ClassificacaoPagar(conta_id=cp.id, tipo_despesa_id=td.id))
+            # classificação correspondente
+            db.add(ClassificacaoPagar(conta_id=cp.id, tipo_despesa_id=tipo_despesa_escolhido.id))
+            
+            # Ocasionalmente adiciona uma segunda classificação relacionada
+            if random.random() > 0.8:
+                outro_tipo = random.choice([t for t in td_objs if t.id != tipo_despesa_escolhido.id])
+                db.add(ClassificacaoPagar(conta_id=cp.id, tipo_despesa_id=outro_tipo.id))
 
         db.flush()
 
@@ -320,7 +375,7 @@ def seed():
         print("   • 15 Fornecedores")
         print("   • 15 Clientes")
         print("   •  5 Faturados")
-        print("   • 10 Tipos de Despesa")
+        print("   •  9 Tipos de Despesa")
         print("   • 10 Tipos de Receita")
         print("   •100 Contas a Pagar  (com parcelas e classificações)")
         print("   •100 Contas a Receber (com parcelas e classificações)")

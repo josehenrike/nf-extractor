@@ -166,10 +166,13 @@ export function ConsultaRAG() {
           {/* Meta-info */}
           <div className="ragResultMeta">
             <span className={`ragResultModoBadge ragResultModo-${resultado.modo}`}>
-              {resultado.modo === "simples" ? "RAG Simples" : "RAG Embeddings"}
+              {resultado.modo === "simples" ? "RAG Simples (SQL Direto)" : "RAG Embeddings"}
             </span>
             <span className="ragResultDocs">
-              {resultado.documentos_usados} documento{resultado.documentos_usados !== 1 ? "s" : ""} consultado{resultado.documentos_usados !== 1 ? "s" : ""}
+              {resultado.modo === "simples"
+                ? `${resultado.documentos_usados} registro(s) retornado(s)`
+                : `${resultado.documentos_usados} documento(s) consultado(s)`
+              }
             </span>
             <span className="ragResultPergunta">
               Pergunta: <em>"{pergunta}"</em>
@@ -185,6 +188,9 @@ export function ConsultaRAG() {
               className="ragRespostaTexto"
               dangerouslySetInnerHTML={{
                 __html: resultado.resposta
+                  // Codigos: ```sql ... ``` ou ``` ... ```
+                  .replace(/```sql\s*([\s\S]*?)\s*```/g, '<pre class="ragCodeBlock"><code>$1</code></pre>')
+                  .replace(/```\s*([\s\S]*?)\s*```/g, '<pre class="ragCodeBlock"><code>$1</code></pre>')
                   // Negrito: **texto**
                   .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
                   // Itálico: *texto*

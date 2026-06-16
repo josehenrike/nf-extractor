@@ -113,8 +113,8 @@ async def extract(file: UploadFile = File(...)):
         raise HTTPException(400, "Envie um arquivo PDF.")
 
     try:
-        api_key = _env("GEMINI_API_KEY")
-        model   = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        api_key = _env("GROQ_API_KEY")
+        model   = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
     except RuntimeError as e:
         raise HTTPException(500, str(e))
 
@@ -148,18 +148,22 @@ Regras:
 """.strip()
 
     try:
-        from google import genai
-        from google.genai import types
-        resp = genai.Client(api_key=api_key).models.generate_content(
+        from groq import Groq
+        client = Groq(api_key=api_key)
+        completion = client.chat.completions.create(
             model=model,
-            contents=[prompt, f"TEXTO DA NOTA FISCAL:\n{nf_text}"],
-            config=types.GenerateContentConfig(temperature=0.2, response_mime_type="application/json"),
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": f"TEXTO DA NOTA FISCAL:\n{nf_text}"}
+            ],
+            temperature=0.2,
+            response_format={"type": "json_object"}
         )
-        text = (resp.text or "").strip()
+        text = completion.choices[0].message.content.strip()
         if not text:
             raise HTTPException(502, "Modelo não retornou conteúdo.")
         return ExtracaoNf.model_validate(_parse_json(text))
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(502, f"Falha ao extrair via Gemini: {type(e).__name__}: {e}")
+        raise HTTPException(502, f"Falha ao extrair via Groq: {type(e).__name__}: {e}")

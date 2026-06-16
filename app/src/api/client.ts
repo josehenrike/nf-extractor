@@ -128,6 +128,7 @@ export const api = {
 
 export interface RagResponse {
   resposta: string;
-  modo: "simples" | "embeddings";
+  modo: string;
   documentos_usados: number;
+  sql_query?: string;
 }
