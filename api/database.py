@@ -7,7 +7,7 @@ load_dotenv(override=False)  # Docker Compose env vars têm prioridade sobre o .
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/nfextractor",
+    "postgresql://nfextractor_user:Z0BgVLASZoNzQJev1RC1SZpMZkUan1DP@dpg-d8pv1ni8qa3s73c7qm10-a.oregon-postgres.render.com/nfextractor",
 )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
