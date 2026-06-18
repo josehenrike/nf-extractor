@@ -112,7 +112,8 @@ function ExtracaoNF() {
         headers["X-Groq-Api-Key"] = key;
       }
 
-      const res = await fetch("http://localhost:8001/extract", { 
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8001";
+      const res = await fetch(`${baseUrl}/extract`, { 
         method: "POST", 
         body: form,
         headers
